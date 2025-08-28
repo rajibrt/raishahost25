@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { color-scheme: light; }
+html { scroll-behavior: smooth; }
+body { @apply text-slate-800 antialiased; }
+.container { @apply mx-auto px-4 sm:px-6 lg:px-8; }
+.section { @apply py-16; }
+.h1 { @apply text-4xl/tight font-bold tracking-tight; }
+.h2 { @apply text-3xl font-semibold; }
+.btn { @apply inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 font-medium text-white shadow hover:bg-brand-dark transition; }
+.card { @apply rounded-2xl border border-slate-200 p-6 shadow-sm bg-white; }
