@@ -89,23 +89,28 @@ export default function Page() {
       <Section id="latest" title="Latest Posts">
         <div className="grid gap-6 md:grid-cols-3 items-stretch">
           {posts.map((p) => (
-            <article key={p.slug} className="card p-0 overflow-hidden h-full min-h-[360px] flex flex-col">
-              <div className="w-full bg-slate-100" style={{ aspectRatio: '3 / 2' }}>
+            <Link
+              key={p.slug}
+              href={`/knowledge/${p.slug}/`}
+              className="card p-0 overflow-hidden h-full min-h-[360px] flex flex-col block group"
+              aria-label={p.title}
+            >
+              <div className="w-full" style={{ aspectRatio: '3 / 2' }}>
                 <img
                   src={p.image || "/images/og-cover.jpg"}
                   alt=""
-                  className="h-full w-full object-cover"
+                  className="block h-full w-full object-cover"
                   loading="lazy"
                 />
               </div>
               <div className="p-4 flex-1 flex flex-col">
-                <h3 className="font-semibold mb-2">
-                  <Link href={`/knowledge/${p.slug}/`}>{p.title}</Link>
+                <h3 className="font-semibold mb-2 group-hover:underline">
+                  {p.title}
                 </h3>
                 <p className="text-sm text-slate-600">{p.excerpt}</p>
                 <p className="mt-2 text-xs text-slate-500">{p.date}</p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </Section>

@@ -1,7 +1,10 @@
 'use client'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useLayoutEffect, useRef } from 'react'
 import Link from 'next/link'
 import { formatBDT } from '../lib/pricing'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+gsap.registerPlugin(ScrollTrigger)
 
 export type Plan = {
   key: 'economy' | 'standard' | 'pro'
@@ -258,6 +261,13 @@ export default function Pricing({
   const [period, setPeriod] = useState<Period>(defaultPeriod)
   const label = priceLabel ?? (period === 'yearly' ? '/yr' : '/mo')
 
+  // Refs for animations
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const toggleWrapRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLDivElement>(null)
+  const monthlyBtnRef = useRef<HTMLButtonElement>(null)
+  const yearlyBtnRef = useRef<HTMLButtonElement>(null)
+
   const cards = useMemo(
     () =>
       plans.map((p) => {
@@ -269,17 +279,83 @@ export default function Pricing({
     [period, plans]
   )
 
+  // Animate cards in on scroll
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      const container = wrapRef.current
+      if (!container) return
+      gsap.from(container.querySelectorAll('.js-card'), {
+        y: 24,
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power3.out',
+        stagger: 0.08,
+        scrollTrigger: {
+          trigger: container,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+      })
+    }, wrapRef)
+    return () => ctx.revert()
+  }, [])
+
+  // Move the toggle indicator under the active button
+  useLayoutEffect(() => {
+    const move = () => {
+      const wrap = toggleWrapRef.current
+      const ind = indicatorRef.current
+      const active = period === 'monthly' ? monthlyBtnRef.current : yearlyBtnRef.current
+      if (!wrap || !ind || !active) return
+      const a = active.getBoundingClientRect()
+      const w = wrap.getBoundingClientRect()
+      const x = a.left - w.left
+      const width = a.width
+      gsap.to(ind, { x, width, duration: 0.3, ease: 'power3.out' })
+      // Subtle pop on active button
+      gsap.fromTo(active, { scale: 0.96 }, { scale: 1, duration: 0.2, ease: 'power2.out' })
+    }
+    move()
+    const onResize = () => move()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [period])
+
+  // Animate price values on period change
+  useLayoutEffect(() => {
+    const container = wrapRef.current
+    if (!container) return
+    const prices = container.querySelectorAll('.js-price')
+    if (!prices.length) return
+    gsap.fromTo(
+      prices,
+      { y: 8, opacity: 0, filter: 'blur(2px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.35, ease: 'power3.out', stagger: 0.06 }
+    )
+  }, [period, cards.length])
+
   return (
-    <div className='relative'>
+    <div ref={wrapRef} className='relative'>
       {/* Toggle */}
       {showToggle && (
         <div className='mb-6 flex items-center justify-center gap-3'>
-          <div className='inline-flex rounded-xl ring-1 ring-brand/25 bg-white p-1 shadow-sm'>
+          <div
+            ref={toggleWrapRef}
+            className='relative inline-flex rounded-xl ring-1 ring-brand/25 bg-white p-1 shadow-sm overflow-hidden'
+          >
+            {/* sliding indicator */}
+            <div
+              ref={indicatorRef}
+              className='absolute top-1 bottom-1 left-1 rounded-lg bg-brand/10 z-0'
+              style={{ width: 0, transform: 'translateX(0px)' }}
+              aria-hidden
+            />
             <button
               type='button'
               onClick={() => setPeriod('monthly')}
+              ref={monthlyBtnRef}
               className={[
-                'px-4 py-2 text-sm font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                'relative z-10 px-4 py-2 text-sm font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
                 period === 'monthly'
                   ? 'bg-brand text-white shadow ring-1 ring-brand/40'
                   : 'bg-white text-brand ring-1 ring-brand/30 hover:bg-brand/10',
@@ -292,8 +368,9 @@ export default function Pricing({
             <button
               type='button'
               onClick={() => setPeriod('yearly')}
+              ref={yearlyBtnRef}
               className={[
-                'px-4 py-2 text-sm font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
+                'relative z-10 px-4 py-2 text-sm font-semibold rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50',
                 period === 'yearly'
                   ? 'bg-brand-gold text-slate-900 shadow ring-1 ring-brand-gold/40'
                   : 'bg-white text-brand-gold ring-1 ring-brand-gold/30 hover:bg-brand-gold/10',
@@ -343,13 +420,13 @@ export default function Pricing({
               </div>
 
               <div className='mt-4 flex items-end gap-2'>
-                <div className='text-3xl font-bold text-slate-900'>
+                <div className='text-3xl font-bold text-slate-900 js-price'>
                   {formatBDT(current, false)}
                   <span className='text-base font-normal text-slate-500'>
                     {label}
                   </span>
                 </div>
-                <div className='text-sm text-slate-400 line-through'>
+                <div className='text-sm text-slate-400 line-through js-price'>
                   {formatBDT(old, false)}
                 </div>
               </div>

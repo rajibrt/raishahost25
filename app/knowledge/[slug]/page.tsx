@@ -1,4 +1,5 @@
 import Section from '../../../components/Section'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
@@ -73,22 +74,32 @@ export default async function Page({
   if (!post) return notFound()
   return (
     <>
-      {/* Banner image on top */}
-      <section className='bg-white'>
-        <div className='container py-6'>
-          <div className='rounded-2xl overflow-hidden border border-slate-200 shadow-sm'>
-            <div style={{ aspectRatio: '3 / 2' }} className='w-full'>
+      {/* Header with breadcrumb and compact cover */}
+      <section className='relative overflow-hidden'>
+        <div className='absolute inset-0 bg-gradient-to-b from-slate-50 to-white' />
+        <div className='relative container py-8 md:py-10'>
+          <nav className='text-xs text-slate-500'>
+            <Link href='/knowledge/' className='hover:text-slate-700'>Knowledge</Link>
+            <span className='mx-1.5'>/</span>
+            <span className='text-slate-700'>Article</span>
+          </nav>
+          <h1 className='mt-2 text-2xl md:text-3xl font-bold tracking-tight'>
+            {post.title}
+          </h1>
+          <div className='mt-5 rounded-2xl overflow-hidden shadow border border-slate-200'>
+            <div style={{ aspectRatio: '16 / 9' }} className='w-full max-h-[280px]'>
               <img
                 src={post.image || '/images/og-cover.jpg'}
                 alt={post.title}
                 className='w-full h-full object-cover'
+                loading='eager'
               />
             </div>
           </div>
         </div>
       </section>
 
-      <Section title={post.title}>
+      <Section>
         <div className='prose max-w-none'>{post.body}</div>
       </Section>
     </>
